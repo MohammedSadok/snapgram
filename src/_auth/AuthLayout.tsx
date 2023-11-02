@@ -11,14 +11,14 @@ export default function AuthLayout() {
         <Navigate to="/" />
       ) : (
         <>
-          <section className="flex flex-col items-center justify-center flex-1 py-10">
+          <section className="flex flex-1 justify-center items-center flex-col py-10">
             <Outlet />
           </section>
 
           <img
             src="/assets/images/side-img.svg"
             alt="logo"
-            className="hidden object-cover w-1/2 h-screen bg-no-repeat xl:block"
+            className="hidden xl:block h-screen w-1/2 object-cover bg-no-repeat"
           />
         </>
       )}

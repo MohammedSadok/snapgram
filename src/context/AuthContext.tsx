@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 import { IUser } from "@/types";
 import { getCurrentUser } from "@/lib/appwrite/api";
+
 export const INITIAL_USER = {
   id: "",
   name: "",
@@ -33,10 +34,10 @@ type IContextType = {
 const AuthContext = createContext<IContextType>(INITIAL_STATE);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<IUser>(INITIAL_USER);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const navigate = useNavigate();
+  const [user, setUser] = useState<IUser>(INITIAL_USER);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const checkAuthUser = async () => {
     setIsLoading(true);
@@ -55,6 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         return true;
       }
+
       return false;
     } catch (error) {
       console.error(error);
@@ -65,8 +67,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    // localStorage.getItem("cookieFallback") === null
-    if (localStorage.getItem("cookieFallback") === "[]") navigate("/sign-in");
+    const cookieFallback = localStorage.getItem("cookieFallback");
+    if (
+      cookieFallback === "[]" ||
+      cookieFallback === null ||
+      cookieFallback === undefined
+    ) {
+      navigate("/sign-in");
+    }
+
     checkAuthUser();
   }, []);
 
@@ -74,7 +83,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     setUser,
     isLoading,
-    setIsLoading,
     isAuthenticated,
     setIsAuthenticated,
     checkAuthUser,
@@ -82,7 +90,5 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
-
-export default AuthProvider;
 
 export const useUserContext = () => useContext(AuthContext);
