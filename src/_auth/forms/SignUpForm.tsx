@@ -8,21 +8,32 @@ import * as z from "zod";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Loader from "@/components/shared/Loader";
-import { createUserAccount } from "@/lib/appwrite/api";
 import { useToast } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
+import {
+  useCreateUserAccount,
+  useSignInAccount,
+} from "@/lib/react-query/queriesAndMutations";
+import { useUserContext } from "@/context/AuthContext";
 
 const SignUpForm: React.FC = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { checkAuthUser, isLoading: isUserLoading } = useUserContext();
+
+  const { mutateAsync: createUserAccount, isPending: isCreatingAccount } =
+    useCreateUserAccount();
+  const { mutateAsync: signInAccount, isPending: isSigningInUser } =
+    useSignInAccount();
+
   const form = useForm<z.infer<typeof SignUpValidation>>({
     resolver: zodResolver(SignUpValidation),
     defaultValues: {
@@ -36,15 +47,39 @@ const SignUpForm: React.FC = () => {
   async function handleSignUp(values: z.infer<typeof SignUpValidation>) {
     const newUser = await createUserAccount(values);
 
-    if (!newUser)
+    if (!newUser) {
       return toast({
         variant: "destructive",
         title: "Sign up failed",
         description: "There was a problem with your request.",
         action: <ToastAction altText="Try again">Try again</ToastAction>,
       });
-    else {
-      // const session = await signInAccont()
+    }
+
+    const session = await signInAccount({
+      email: values.email,
+      password: values.password,
+    });
+
+    if (!session) {
+      return toast({
+        variant: "destructive",
+        title: "Sign up 2",
+        description: "There was a problem with your request.",
+        action: <ToastAction altText="Try again">Try again</ToastAction>,
+      });
+    }
+    const isLoggedIn = await checkAuthUser();
+    if (isLoggedIn) {
+      form.reset();
+      navigate("/");
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Sign up 3",
+        description: "There was a problem with your request.",
+        action: <ToastAction altText="Try again">Try again</ToastAction>,
+      });
     }
   }
 
@@ -121,15 +156,14 @@ const SignUpForm: React.FC = () => {
           />
 
           <Button type="submit" className="shad-button_primary">
-            {/* {isCreatingAccount || isSigningInUser || isUserLoading ? (
+            {isCreatingAccount || isSigningInUser || isUserLoading ? (
               <div className="gap-2 flex-center">
                 <Loader /> Loading...
               </div>
             ) : (
-              )} */}
-            "Sign Up"
+              "Sign Up"
+            )}
           </Button>
-
           <p className="mt-2 text-center text-small-regular text-light-2">
             Already have an account?
             <Link
